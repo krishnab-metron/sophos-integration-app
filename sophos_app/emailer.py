@@ -37,7 +37,8 @@ def send_email(
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
-    msg.set_content(body)
+    msg.set_content("This email requires an HTML-compatible client.")
+    msg.add_alternative(body, subtype="html")
     # Attach file if provided
     if attachment_path:
         with open(attachment_path, "rb") as f:
