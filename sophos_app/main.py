@@ -19,6 +19,7 @@ from .report import generate_report, classify_endpoint
 from .attendance import init_db, log_attendance, get_low_office_attendance
 from .emailer import send_email
 from .utils import format_username
+from .google_sheets import update_google_sheet
 
 
 def run() -> None:
@@ -90,6 +91,10 @@ def run() -> None:
         classify_endpoint(ep, office_networks)[:3] for ep in endpoints
     ]
     log_attendance(classifications)
+
+    # Build attendance_dict for Google Sheet
+    attendance_dict = {format_username(u): c for h, u, c in classifications}
+    update_google_sheet(attendance_dict, "C:/Users/krishna.balsara_metr/Downloads/sophos_app/sophos_app/credentials/sophos-integration-app-4d5e053b6446.json")
 
     table_rows = "\n".join(
         f"<tr><td>{format_username(u)}</td><td>{h}</td><td>{c}</td></tr>"
