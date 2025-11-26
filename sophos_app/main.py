@@ -18,7 +18,7 @@ from .client import SophosAPIClient
 from .report import generate_report, classify_endpoint
 from .attendance import init_db, log_attendance, get_low_office_attendance
 from .emailer import send_email
-from .utils import format_username
+from .utils import format_username, build_weekly_attendance_table
 from .google_sheets import update_google_sheet
 
 
@@ -41,9 +41,11 @@ def run() -> None:
     if args.mode == "weekly":
         init_db()
         low_attendees = get_low_office_attendance(threshold=3)
+
         if not low_attendees:
             print("Everyone met the 3-day office policy this week.")
             return
+
         summary_path = os.path.abspath("weekly_summary.csv")
         with open(summary_path, "w", encoding="utf-8", newline="") as f:
             import csv
@@ -53,10 +55,15 @@ def run() -> None:
                 writer.writerow([username, count])
 
         subject = "Weekly Attendance Summary"
-        body = (
-            "Weekly Summary: Employees with < 3 Office Days\n\n" +
-            "\n".join(f"- {u} ({c} days)" for u, c in low_attendees)
-        )
+        body = """
+        <html>
+        <body>
+        <h2>Weekly Summary: Employees with &lt; 3 Office Days</h2>
+        """ + build_weekly_attendance_table(low_attendees) + """
+        </body>
+        </html>
+        """
+
         send_email(
             smtp_server=config.email_smtp_server,
             smtp_port=config.email_smtp_port,
