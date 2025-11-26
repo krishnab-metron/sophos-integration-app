@@ -38,10 +38,10 @@ def log_attendance(classifications: List[Tuple[str, str, str]]):
         )
 
 def get_low_office_attendance(threshold: int = 3) -> List[Tuple[str, int]]:
-    """Return list of usernames with < threshold office days this week, including 0."""
+    """Return list of usernames with < threshold office days (Mon–Fri of current week)."""
     today = date.today()
-    iso_year, iso_week, _ = today.isocalendar()
-    monday = datetime.strptime(f"{iso_year}-W{iso_week - 1}-1", "%G-W%V-%u").date()
+    monday = today - timedelta(days=today.weekday())
+    friday = monday + timedelta(days=4)
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
@@ -51,7 +51,7 @@ def get_low_office_attendance(threshold: int = 3) -> List[Tuple[str, int]]:
             '''SELECT DISTINCT username
                FROM attendance
                WHERE date BETWEEN ? AND ?''',
-            (monday.isoformat(), today.isoformat())
+            (monday.isoformat(), friday.isoformat())
         )
         all_users = [row[0] for row in cursor.fetchall()]
 
@@ -62,7 +62,7 @@ def get_low_office_attendance(threshold: int = 3) -> List[Tuple[str, int]]:
                WHERE classification = 'Office'
                AND date BETWEEN ? AND ?
                GROUP BY username''',
-            (monday.isoformat(), today.isoformat())
+            (monday.isoformat(), friday.isoformat())
         )
         office_counts = dict(cursor.fetchall())
 
